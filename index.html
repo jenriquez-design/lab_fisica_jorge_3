@@ -1,0 +1,2124 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Laboratorio Virtual: Caída Libre de una Piedra</title>
+  <!-- Tailwind CSS via allowlisted CDN -->
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    /* Estilos científicos y efectos visuales refinados */
+    :root {
+      --bg-dark: #090d16;
+      --panel-dark: #0f172a;
+      --card-dark: #1e293b;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-rose: #f43f5e;
+      --accent-amber: #f59e0b;
+      --accent-purple: #8b5cf6;
+    }
+
+    body {
+      background-color: #060911;
+      color: #f1f5f9;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* Scrollbar personalizada */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b1120;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #25334d;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #38bdf8;
+    }
+
+    /* Sliders personalizados */
+    input[type=range] {
+      -webkit-appearance: none;
+      background: #1e293b;
+      border-radius: 9999px;
+      height: 8px;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #38bdf8;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+      border: 2px solid #ffffff;
+      cursor: pointer;
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.9);
+    }
+
+    /* Brillos y tarjetas de laboratorio */
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+    }
+
+    .glass-card {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .pulse-glow {
+      animation: pulseGlow 2s infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.85; filter: drop-shadow(0 0 4px currentColor); }
+      50% { opacity: 1; filter: drop-shadow(0 0 10px currentColor); }
+    }
+
+    /* Canvas nítido */
+    canvas {
+      image-rendering: auto;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-100 flex flex-col justify-between selection:bg-cyan-500 selection:text-white">
+
+  <!-- ========================================== -->
+  <!-- BARRA SUPERIOR DE ENCABEZADO Y TELEMETRÍA -->
+  <!-- ========================================== -->
+  <header class="border-b border-slate-800 bg-slate-950/80 sticky top-0 z-50 backdrop-blur-md px-4 py-3">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      <!-- Logotipo & Título -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 via-sky-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-cyan-500/20 text-white font-black text-xl">
+          g
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+              Laboratorio Virtual: Caída Libre
+            </h1>
+            <span class="text-xs px-2 py-0.5 rounded-full font-mono bg-cyan-950 text-cyan-400 border border-cyan-800/60 font-medium">
+              Física Clásica
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">
+            Simulador cinemático en tiempo real con vectores y gráficas sincrónicas
+          </p>
+        </div>
+      </div>
+
+      <!-- Barra de Estado Rápido y Selector de Planeta Actual -->
+      <div class="flex items-center gap-3">
+        <!-- Badge de planeta activo -->
+        <div id="headerPlanetBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700 text-xs font-medium">
+          <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+          <span id="headerPlanetName" class="text-slate-200">Tierra</span>
+          <span id="headerPlanetGravity" class="text-cyan-400 font-mono font-bold">9.81 m/s²</span>
+        </div>
+
+        <!-- Botón de Sonido -->
+        <button id="btnAudioToggle" title="Activar/Desactivar efectos de audio sintetizados" class="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition">
+          <svg id="iconAudioOn" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
+          </svg>
+          <svg id="iconAudioOff" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path>
+          </svg>
+        </button>
+
+        <!-- Botón de Reinicio Rápido -->
+        <button id="btnHeaderReset" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium transition">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+          <span>Reiniciar</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- CONTENEDOR PRINCIPAL DEL LABORATORIO       -->
+  <!-- ========================================== -->
+  <main class="max-w-7xl mx-auto px-4 py-6 w-full space-y-6">
+
+    <!-- FILA 1: SIMULACIÓN PRINCIPAL + PANEL DE CONTROL & TELEMETRÍA -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- ========================================= -->
+      <!-- COLUMNA IZQUIERDA: CANVAS DE CAÍDA LIBRE  -->
+      <!-- ========================================= -->
+      <div class="lg:col-span-7 flex flex-col gap-4">
+        <div class="glass-panel rounded-2xl overflow-hidden flex flex-col border border-slate-800 shadow-2xl relative">
+          
+          <!-- Barra superior del Canvas: Leyendas y Toggles de Visión -->
+          <div class="px-4 py-2.5 bg-slate-900/90 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <!-- Leyenda de Vectores -->
+            <div class="flex items-center gap-4">
+              <span class="text-slate-400 font-semibold tracking-wide uppercase text-[11px]">Vectores:</span>
+              <div class="flex items-center gap-1.5">
+                <span class="w-3 h-1.5 rounded bg-cyan-400"></span>
+                <span class="text-cyan-300 font-medium">Velocidad (v)</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="w-3 h-1.5 rounded bg-rose-500"></span>
+                <span class="text-rose-400 font-medium">Aceleración (a)</span>
+              </div>
+            </div>
+
+            <!-- Toggles rápidos sobre el canvas -->
+            <div class="flex items-center gap-3">
+              <label class="flex items-center gap-1.5 cursor-pointer text-slate-300 hover:text-white">
+                <input type="checkbox" id="chkShowVectors" checked class="rounded bg-slate-800 border-slate-700 text-cyan-500 focus:ring-0">
+                <span>Vectores</span>
+              </label>
+              <label class="flex items-center gap-1.5 cursor-pointer text-slate-300 hover:text-white">
+                <input type="checkbox" id="chkShowValues" checked class="rounded bg-slate-800 border-slate-700 text-cyan-500 focus:ring-0">
+                <span>Valores</span>
+              </label>
+              <label class="flex items-center gap-1.5 cursor-pointer text-slate-300 hover:text-white">
+                <input type="checkbox" id="chkShowTrail" checked class="rounded bg-slate-800 border-slate-700 text-cyan-500 focus:ring-0">
+                <span>Estela</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Contenedor del Canvas de Simulación -->
+          <div class="relative w-full h-[460px] sm:h-[500px] bg-slate-950 overflow-hidden select-none" id="canvasContainer">
+            <canvas id="simCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+            
+            <!-- Overlay de información flotante en Canvas: Altura y Tiempo -->
+            <div class="absolute top-3 left-3 flex flex-col gap-2 pointer-events-none">
+              <div class="glass-card px-3 py-1.5 rounded-lg border border-slate-700/60 shadow-lg text-xs backdrop-blur-md">
+                <span class="text-slate-400">Estado:</span>
+                <span id="canvasStatusText" class="font-bold text-cyan-400 ml-1">Listo para soltar</span>
+              </div>
+              <div id="countdownBox" class="glass-card px-3 py-1.5 rounded-lg border border-slate-700/60 shadow-lg text-xs backdrop-blur-md hidden">
+                <span class="text-slate-400">Tiempo restante:</span>
+                <span id="countdownVal" class="font-mono font-bold text-amber-400 ml-1">-- s</span>
+              </div>
+            </div>
+
+            <!-- Medidor de Energía Mecánica Flotante (Cinética vs Potencial) -->
+            <div id="energyGaugeContainer" class="absolute top-3 right-3 w-48 glass-card p-2.5 rounded-xl border border-slate-700/80 shadow-xl backdrop-blur-md">
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-slate-300 font-semibold">Transformación de Energía</span>
+                <span id="energyTotalLabel" class="text-slate-400 font-mono">100%</span>
+              </div>
+              <div class="w-full h-3 rounded-full bg-slate-800 overflow-hidden flex shadow-inner">
+                <div id="barKinetic" class="h-full bg-gradient-to-r from-cyan-500 to-sky-400 transition-all duration-75" style="width: 0%" title="Energía Cinética (Ek)"></div>
+                <div id="barPotential" class="h-full bg-gradient-to-r from-amber-500 to-emerald-400 transition-all duration-75" style="width: 100%" title="Energía Potencial (Ep)"></div>
+              </div>
+              <div class="flex justify-between text-[10px] mt-1.5 font-mono">
+                <span class="text-cyan-400 flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                  Ek: <b id="valEk">0 J</b>
+                </span>
+                <span class="text-amber-400 flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                  Ep: <b id="valEp">490 J</b>
+                </span>
+              </div>
+            </div>
+
+            <!-- Cartel de Impacto Flotante -->
+            <div id="impactBanner" class="absolute inset-x-0 bottom-16 flex justify-center pointer-events-none opacity-0 transition-opacity duration-300">
+              <div class="bg-rose-500/90 text-white font-bold px-4 py-1.5 rounded-full shadow-2xl backdrop-blur-md border border-rose-400/50 flex items-center gap-2 text-xs uppercase tracking-wider animate-bounce">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"></path>
+                </svg>
+                <span>¡Impacto con el suelo! h = 0 m</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Barra de Control Temporal y Deslizador de Tiempo Manual -->
+          <div class="p-4 bg-slate-900/95 border-t border-slate-800 space-y-3">
+            <div class="flex items-center justify-between gap-3">
+              <!-- Botones principales: Play, Pause, Reset -->
+              <div class="flex items-center gap-2">
+                <button id="btnPlayPause" class="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-sky-600 hover:from-cyan-400 hover:to-sky-500 text-white font-bold text-sm shadow-lg shadow-cyan-500/25 transition transform active:scale-95">
+                  <svg id="iconPlay" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path>
+                  </svg>
+                  <svg id="iconPause" class="w-4 h-4 hidden" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                  </svg>
+                  <span id="labelPlayPause">Soltar Piedra</span>
+                </button>
+
+                <button id="btnStep" title="Avanzar un fotograma (paso a paso)" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
+                  </svg>
+                </button>
+
+                <button id="btnReset" title="Reiniciar simulación a t = 0" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Selector de Velocidad (Cámara Lenta) -->
+              <div class="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                <span class="text-[11px] text-slate-400 px-2 font-medium">Velocidad:</span>
+                <button class="btnSpeed px-2.5 py-1 text-xs rounded-lg font-medium transition text-slate-400 hover:text-white" data-speed="0.2">0.2x</button>
+                <button class="btnSpeed px-2.5 py-1 text-xs rounded-lg font-medium transition text-slate-400 hover:text-white" data-speed="0.5">0.5x</button>
+                <button class="btnSpeed px-2.5 py-1 text-xs rounded-lg font-medium transition bg-cyan-600 text-white font-bold" data-speed="1.0">1.0x</button>
+              </div>
+            </div>
+
+            <!-- Deslizador de Tiempo (Scrubber) Sincronizado -->
+            <div class="space-y-1">
+              <div class="flex justify-between items-center text-xs">
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-400 font-medium">Línea de tiempo manual:</span>
+                  <span class="text-cyan-400 font-mono font-bold" id="scrubberTimeDisplay">t = 0.00 s</span>
+                </div>
+                <div class="text-slate-400 font-mono">
+                  Impacto: <span id="scrubberTotalTime" class="text-slate-200 font-bold">3.19 s</span>
+                </div>
+              </div>
+              <input type="range" id="timeScrubber" min="0" max="100" value="0" step="0.1" class="w-full">
+            </div>
+          </div>
+        </div>
+
+        <!-- Mini-guía de los Vectores y Fórmulas Clave -->
+        <div class="glass-panel p-4 rounded-2xl border border-slate-800 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+          <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80">
+            <div class="flex items-center justify-between text-cyan-400 font-bold mb-1">
+              <span>Posición h(t)</span>
+              <span class="text-[10px] font-mono bg-cyan-950/80 px-1.5 py-0.5 rounded text-cyan-300">Parábola</span>
+            </div>
+            <p class="font-mono text-slate-300">h(t) = h₀ + v₀t − ½gt²</p>
+            <p class="text-[11px] text-slate-400 mt-1">Disminuye con el cuadrado del tiempo.</p>
+          </div>
+
+          <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80">
+            <div class="flex items-center justify-between text-emerald-400 font-bold mb-1">
+              <span>Velocidad v(t)</span>
+              <span class="text-[10px] font-mono bg-emerald-950/80 px-1.5 py-0.5 rounded text-emerald-300">Lineal</span>
+            </div>
+            <p class="font-mono text-slate-300">v(t) = v₀ − gt</p>
+            <p class="text-[11px] text-slate-400 mt-1">Aumenta en magnitud de forma continua.</p>
+          </div>
+
+          <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80">
+            <div class="flex items-center justify-between text-rose-400 font-bold mb-1">
+              <span>Aceleración a(t)</span>
+              <span class="text-[10px] font-mono bg-rose-950/80 px-1.5 py-0.5 rounded text-rose-300">Constante</span>
+            </div>
+            <p class="font-mono text-slate-300">a(t) = −g</p>
+            <p class="text-[11px] text-slate-400 mt-1">Invariable durante toda la caída.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================= -->
+      <!-- COLUMNA DERECHA: PARÁMETROS Y TELEMETRÍA  -->
+      <!-- ========================================= -->
+      <div class="lg:col-span-5 flex flex-col gap-4">
+
+        <!-- TARJETAS DE TELEMETRÍA EN TIEMPO REAL -->
+        <div class="grid grid-cols-2 gap-3">
+          <!-- Tiempo Transcurrido -->
+          <div class="glass-panel p-3.5 rounded-xl border border-slate-800/90 relative overflow-hidden group">
+            <div class="absolute -right-3 -top-3 w-16 h-16 bg-cyan-500/10 rounded-full blur-xl group-hover:bg-cyan-500/20 transition"></div>
+            <span class="text-xs text-slate-400 font-medium flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke-width="2"></circle>
+                <path stroke-linecap="round" stroke-width="2" d="M12 6v6l4 2"></path>
+              </svg>
+              Tiempo Transcurrido
+            </span>
+            <div class="mt-1 flex items-baseline gap-1">
+              <span id="telemetryTime" class="text-2xl font-black font-mono text-white tracking-tight">0.00</span>
+              <span class="text-xs text-cyan-400 font-mono font-semibold">s</span>
+            </div>
+            <div class="text-[11px] text-slate-500 mt-1">Impacto a <span id="telemetryMaxTime" class="font-mono text-slate-400">3.19 s</span></div>
+          </div>
+
+          <!-- Altura / Posición -->
+          <div class="glass-panel p-3.5 rounded-xl border border-slate-800/90 relative overflow-hidden group">
+            <div class="absolute -right-3 -top-3 w-16 h-16 bg-sky-500/10 rounded-full blur-xl group-hover:bg-sky-500/20 transition"></div>
+            <span class="text-xs text-slate-400 font-medium flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+              </svg>
+              Altura Actual h(t)
+            </span>
+            <div class="mt-1 flex items-baseline gap-1">
+              <span id="telemetryHeight" class="text-2xl font-black font-mono text-white tracking-tight">50.0</span>
+              <span class="text-xs text-sky-400 font-mono font-semibold">m</span>
+            </div>
+            <div class="text-[11px] text-slate-500 mt-1">Inicial: <span id="telemetryInitialHeight" class="font-mono text-slate-400">50.0 m</span></div>
+          </div>
+
+          <!-- Velocidad Instantánea -->
+          <div class="glass-panel p-3.5 rounded-xl border border-slate-800/90 relative overflow-hidden group">
+            <div class="absolute -right-3 -top-3 w-16 h-16 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition"></div>
+            <span class="text-xs text-slate-400 font-medium flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+              </svg>
+              Velocidad v(t)
+            </span>
+            <div class="mt-1 flex items-baseline gap-1">
+              <span id="telemetryVelocity" class="text-2xl font-black font-mono text-emerald-400 tracking-tight">0.0</span>
+              <span class="text-xs text-emerald-300 font-mono font-semibold">m/s</span>
+            </div>
+            <div class="text-[11px] text-slate-500 mt-1">
+              Rapidez: <span id="telemetrySpeedKmh" class="font-mono text-slate-400">0.0 km/h</span>
+            </div>
+          </div>
+
+          <!-- Aceleración Gravitatoria -->
+          <div class="glass-panel p-3.5 rounded-xl border border-slate-800/90 relative overflow-hidden group">
+            <div class="absolute -right-3 -top-3 w-16 h-16 bg-rose-500/10 rounded-full blur-xl group-hover:bg-rose-500/20 transition"></div>
+            <span class="text-xs text-slate-400 font-medium flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+              Aceleración g
+            </span>
+            <div class="mt-1 flex items-baseline gap-1">
+              <span id="telemetryGravity" class="text-2xl font-black font-mono text-rose-400 tracking-tight">9.81</span>
+              <span class="text-xs text-rose-300 font-mono font-semibold">m/s²</span>
+            </div>
+            <div class="text-[11px] text-slate-500 mt-1">Vector: <span class="font-mono text-rose-400 font-semibold">−9.81 ĵ</span></div>
+          </div>
+        </div>
+
+        <!-- Velocidad Máxima al Impacto (Highlight) -->
+        <div class="glass-panel p-3.5 rounded-xl border border-slate-800 flex items-center justify-between bg-gradient-to-r from-slate-900/80 via-slate-900 to-indigo-950/40">
+          <div>
+            <span class="text-xs text-slate-400 font-medium block">Velocidad Máxima al Impacto</span>
+            <span class="text-xs text-slate-500">v_max = √(v₀² + 2gh₀)</span>
+          </div>
+          <div class="text-right">
+            <div class="flex items-baseline justify-end gap-1">
+              <span id="telemetryMaxVelocity" class="text-2xl font-black font-mono text-amber-400">31.32</span>
+              <span class="text-xs text-amber-300 font-mono font-semibold">m/s</span>
+            </div>
+            <span id="telemetryMaxVelocityKmh" class="text-[11px] text-slate-400 font-mono">112.75 km/h</span>
+          </div>
+        </div>
+
+        <!-- PANEL DE CONFIGURACIÓN DE PARÁMETROS -->
+        <div class="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4">
+          <h2 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+            </svg>
+            Parámetros del Experimento
+          </h2>
+
+          <!-- Control: Altura Inicial (h0) -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between items-center">
+              <label for="sliderHeight" class="text-xs font-medium text-slate-300">Altura Inicial (h₀):</label>
+              <div class="flex items-center gap-1">
+                <input type="number" id="numHeight" min="5" max="300" value="50" class="w-16 px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-cyan-400 font-mono font-bold text-xs text-right focus:outline-none focus:border-cyan-500">
+                <span class="text-xs text-slate-400 font-mono">m</span>
+              </div>
+            </div>
+            <input type="range" id="sliderHeight" min="5" max="200" value="50" step="1" class="w-full">
+            <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+              <span>5 m</span>
+              <span>100 m</span>
+              <span>200 m</span>
+            </div>
+          </div>
+
+          <!-- Control: Velocidad Inicial (v0) -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between items-center">
+              <div>
+                <label for="sliderVelocity" class="text-xs font-medium text-slate-300">Velocidad Inicial (v₀):</label>
+                <span id="v0DirectionLabel" class="text-[10px] text-slate-400 ml-1">(Soltada en reposo)</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <input type="number" id="numVelocity" min="-30" max="30" value="0" class="w-16 px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-emerald-400 font-mono font-bold text-xs text-right focus:outline-none focus:border-cyan-500">
+                <span class="text-xs text-slate-400 font-mono">m/s</span>
+              </div>
+            </div>
+            <input type="range" id="sliderVelocity" min="-30" max="30" value="0" step="1" class="w-full">
+            <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+              <span>-30 m/s (Hacia abajo)</span>
+              <span>0 m/s</span>
+              <span>+30 m/s (Hacia arriba)</span>
+            </div>
+          </div>
+
+          <!-- Selector de Planeta / Cuerpo Celeste -->
+          <div class="space-y-2 pt-2 border-t border-slate-800">
+            <div class="flex justify-between items-center">
+              <label class="text-xs font-medium text-slate-300">Cuerpo Celeste:</label>
+              <span class="text-[11px] text-slate-400">Gravedad local</span>
+            </div>
+            
+            <div class="grid grid-cols-3 gap-2" id="planetSelectorGrid">
+              <!-- Planetas generados dinámicamente -->
+            </div>
+
+            <!-- Mini barra comparativa de aceleración del planeta actual -->
+            <div class="pt-2">
+              <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+                <span>Escala comparativa de gravedad (vs Júpiter 24.79 m/s²):</span>
+                <span id="gravityRatioLabel" class="font-mono text-cyan-400 font-bold">39.6%</span>
+              </div>
+              <div class="w-full h-2 rounded-full bg-slate-900 overflow-hidden border border-slate-800">
+                <div id="gravityBar" class="h-full bg-gradient-to-r from-cyan-500 via-sky-400 to-indigo-500 rounded-full transition-all duration-300" style="width: 39.6%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- FILA 2: TRES GRÁFICAS SINCRONIZADAS        -->
+    <!-- ========================================== -->
+    <section class="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+        <div>
+          <h2 class="text-base font-bold text-white flex items-center gap-2">
+            <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+            </svg>
+            Gráficas Cinemáticas Sincronizadas en Tiempo Real
+          </h2>
+          <p class="text-xs text-slate-400">
+            Observa el comportamiento matemático simultáneo de la posición, la velocidad y la aceleración
+          </p>
+        </div>
+        
+        <div class="flex items-center gap-3">
+          <label class="flex items-center gap-1.5 cursor-pointer text-xs text-slate-300 hover:text-white">
+            <input type="checkbox" id="chkShowAllPlots" checked class="rounded bg-slate-800 border-slate-700 text-cyan-500 focus:ring-0">
+            <span>Mostrar Gráficas</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Contenedor de las 3 Gráficas en Cuadrícula -->
+      <div id="plotsContainer" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        
+        <!-- GRÁFICA 1: Posición vs Tiempo -->
+        <div class="glass-card p-3 rounded-xl border border-slate-800/80 flex flex-col">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
+              1. Posición vs. Tiempo h(t)
+            </span>
+            <span class="text-[10px] font-mono text-cyan-300/80 bg-cyan-950/60 px-1.5 py-0.5 rounded border border-cyan-800/40">
+              Parábola
+            </span>
+          </div>
+          <div class="relative w-full h-44 bg-slate-950/80 rounded-lg overflow-hidden border border-slate-900">
+            <canvas id="canvasPlotHeight" class="w-full h-full block"></canvas>
+            <div id="plotHeightTooltip" class="absolute pointer-events-none hidden bg-slate-900 text-[10px] font-mono px-2 py-0.5 rounded border border-cyan-500/50 text-cyan-300 shadow-lg"></div>
+          </div>
+          <div class="flex justify-between text-[11px] text-slate-400 mt-2 font-mono">
+            <span>Eje Y: Altura (m)</span>
+            <span>Eje X: Tiempo (s)</span>
+          </div>
+        </div>
+
+        <!-- GRÁFICA 2: Velocidad vs Tiempo -->
+        <div class="glass-card p-3 rounded-xl border border-slate-800/80 flex flex-col">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              2. Velocidad vs. Tiempo v(t)
+            </span>
+            <span class="text-[10px] font-mono text-emerald-300/80 bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-800/40">
+              Línea Recta
+            </span>
+          </div>
+          <div class="relative w-full h-44 bg-slate-950/80 rounded-lg overflow-hidden border border-slate-900">
+            <canvas id="canvasPlotVelocity" class="w-full h-full block"></canvas>
+            <div id="plotVelocityTooltip" class="absolute pointer-events-none hidden bg-slate-900 text-[10px] font-mono px-2 py-0.5 rounded border border-emerald-500/50 text-emerald-300 shadow-lg"></div>
+          </div>
+          <div class="flex justify-between text-[11px] text-slate-400 mt-2 font-mono">
+            <span>Eje Y: Velocidad (m/s)</span>
+            <span>Pendiente = −g</span>
+          </div>
+        </div>
+
+        <!-- GRÁFICA 3: Aceleración vs Tiempo -->
+        <div class="glass-card p-3 rounded-xl border border-slate-800/80 flex flex-col">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-rose-400 flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+              3. Aceleración vs. Tiempo a(t)
+            </span>
+            <span class="text-[10px] font-mono text-rose-300/80 bg-rose-950/60 px-1.5 py-0.5 rounded border border-rose-800/40">
+              Constante
+            </span>
+          </div>
+          <div class="relative w-full h-44 bg-slate-950/80 rounded-lg overflow-hidden border border-slate-900">
+            <canvas id="canvasPlotAcceleration" class="w-full h-full block"></canvas>
+            <div id="plotAccelerationTooltip" class="absolute pointer-events-none hidden bg-slate-900 text-[10px] font-mono px-2 py-0.5 rounded border border-rose-500/50 text-rose-300 shadow-lg"></div>
+          </div>
+          <div class="flex justify-between text-[11px] text-slate-400 mt-2 font-mono">
+            <span>Eje Y: Aceleración (m/s²)</span>
+            <span>a = −g = cte</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- FILA 3: TABLA COMPARATIVA ENTRE PLANETAS   -->
+    <!-- ========================================== -->
+    <section class="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-bold text-white flex items-center gap-2">
+            <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            Comparativa Planetaria: Misma Altura, Diferente Gravedad
+          </h2>
+          <p class="text-xs text-slate-400">
+            Compara simultáneamente cómo varía el tiempo de caída y la velocidad final para la altura actual (<span id="compareCurrentHeight" class="text-cyan-400 font-bold font-mono">50 m</span>)
+          </p>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr class="border-b border-slate-800 text-slate-400 font-semibold bg-slate-900/60">
+              <th class="p-3">Cuerpo Celeste</th>
+              <th class="p-3">Gravedad (g)</th>
+              <th class="p-3">Barra Relativa</th>
+              <th class="p-3">Tiempo de Caída</th>
+              <th class="p-3">Velocidad de Impacto</th>
+              <th class="p-3 text-right">Acción</th>
+            </tr>
+          </thead>
+          <tbody id="planetComparisonTableBody" class="divide-y divide-slate-800/60">
+            <!-- Rellenado dinámicamente -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- FILA 4: SECCIÓN "¿QUÉ PASARÍA SI...?"      -->
+    <!-- ========================================== -->
+    <section class="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div>
+          <h2 class="text-base font-bold text-white flex items-center gap-2">
+            <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+            </svg>
+            Experimentos Interactivos: “¿Qué pasaría si…?”
+          </h2>
+          <p class="text-xs text-slate-400">
+            Haz clic en cada hipótesis para configurar automáticamente el laboratorio y comprobar la ley física
+          </p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        
+        <!-- Tarjeta 1: Duplicar altura -->
+        <div class="glass-card p-4 rounded-xl border border-slate-800 hover:border-cyan-500/50 transition flex flex-col justify-between group">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-cyan-400">Caso 1</span>
+              <span class="text-[10px] bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded font-mono">h₀ → 2h₀</span>
+            </div>
+            <h3 class="text-sm font-semibold text-white group-hover:text-cyan-300 transition">
+              ¿Qué ocurre si duplicas la altura?
+            </h3>
+            <p class="text-xs text-slate-400 mt-1">
+              ¿El tiempo de caída se duplica también o crece de otra forma?
+            </p>
+          </div>
+          <button class="btnHypothesis mt-4 w-full py-2 px-3 rounded-lg bg-slate-800 hover:bg-cyan-600 text-slate-200 hover:text-white font-medium text-xs transition" data-experiment="double-height">
+            Probar Experimento
+          </button>
+        </div>
+
+        <!-- Tarjeta 2: Cambiar a la Luna -->
+        <div class="glass-card p-4 rounded-xl border border-slate-800 hover:border-amber-500/50 transition flex flex-col justify-between group">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-amber-400">Caso 2</span>
+              <span class="text-[10px] bg-amber-950 text-amber-300 px-2 py-0.5 rounded font-mono">Tierra → Luna</span>
+            </div>
+            <h3 class="text-sm font-semibold text-white group-hover:text-amber-300 transition">
+              ¿Qué ocurre de la Tierra a la Luna?
+            </h3>
+            <p class="text-xs text-slate-400 mt-1">
+              La gravedad lunar es 6 veces menor. ¿Cómo impacta en la aceleración y la caída?
+            </p>
+          </div>
+          <button class="btnHypothesis mt-4 w-full py-2 px-3 rounded-lg bg-slate-800 hover:bg-amber-600 text-slate-200 hover:text-white font-medium text-xs transition" data-experiment="earth-to-moon">
+            Probar Experimento
+          </button>
+        </div>
+
+        <!-- Tarjeta 3: Velocidad inicial hacia abajo -->
+        <div class="glass-card p-4 rounded-xl border border-slate-800 hover:border-emerald-500/50 transition flex flex-col justify-between group">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-emerald-400">Caso 3</span>
+              <span class="text-[10px] bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded font-mono">v₀ = −15 m/s</span>
+            </div>
+            <h3 class="text-sm font-semibold text-white group-hover:text-emerald-300 transition">
+              ¿Y si la lanzas hacia abajo?
+            </h3>
+            <p class="text-xs text-slate-400 mt-1">
+              ¿La aceleración cambia si el cuerpo ya lleva velocidad de inicio?
+            </p>
+          </div>
+          <button class="btnHypothesis mt-4 w-full py-2 px-3 rounded-lg bg-slate-800 hover:bg-emerald-600 text-slate-200 hover:text-white font-medium text-xs transition" data-experiment="downward-launch">
+            Probar Experimento
+          </button>
+        </div>
+
+        <!-- Tarjeta 4: Planeta con mayor velocidad -->
+        <div class="glass-card p-4 rounded-xl border border-slate-800 hover:border-rose-500/50 transition flex flex-col justify-between group">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-rose-400">Caso 4</span>
+              <span class="text-[10px] bg-rose-950 text-rose-300 px-2 py-0.5 rounded font-mono">Júpiter (24.79)</span>
+            </div>
+            <h3 class="text-sm font-semibold text-white group-hover:text-rose-300 transition">
+              ¿Mayor velocidad de impacto?
+            </h3>
+            <p class="text-xs text-slate-400 mt-1">
+              ¿En qué planeta la piedra acelera con más violencia hacia el suelo?
+            </p>
+          </div>
+          <button class="btnHypothesis mt-4 w-full py-2 px-3 rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-200 hover:text-white font-medium text-xs transition" data-experiment="max-velocity">
+            Probar Experimento
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Cuadro Dinámico de Explicación de la Hipótesis Seleccionada -->
+      <div id="hypothesisFeedbackBox" class="mt-4 p-4 rounded-xl bg-slate-900/90 border border-indigo-500/30 text-xs hidden">
+        <div class="flex items-start gap-3">
+          <div class="p-2 rounded-lg bg-indigo-500/20 text-indigo-400 flex-shrink-0 mt-0.5">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+          <div class="space-y-1 w-full">
+            <h4 id="hypothesisTitle" class="text-sm font-bold text-white">Explicación del Experimento</h4>
+            <p id="hypothesisText" class="text-slate-300 leading-relaxed"></p>
+            <div id="hypothesisFormula" class="mt-2 font-mono text-cyan-300 bg-slate-950 px-3 py-1.5 rounded border border-slate-800 inline-block"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- FILA 5: CONEXIÓN REAL Y CONCLUSIÓN FINAL   -->
+    <!-- ========================================== -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Situaciones Reales de Caída Libre -->
+      <div class="lg:col-span-6 glass-panel p-5 rounded-2xl border border-slate-800 space-y-3">
+        <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 text-sky-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          Caída Libre en el Mundo Real
+        </h3>
+        <ul class="text-xs text-slate-300 space-y-2.5">
+          <li class="flex items-start gap-2">
+            <span class="text-cyan-400 font-bold">•</span>
+            <span><b>El Experimento del Apolo 15 (1971):</b> En la Luna, el astronauta David Scott soltó simultáneamente un martillo geológico y una pluma de halcón. Sin atmósfera ni resistencia del aire, ambos tocaron el suelo exactamente al mismo instante, confirmando la predicción de Galileo.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-cyan-400 font-bold">•</span>
+            <span><b>Torres de Caída Libre y Parques:</b> Las atracciones de caída libre simulan la ingravidez soltando el habitáculo sin propulsión hacia abajo; tu cuerpo cae al unísono con el asiento y los pies dejan de sentir presión normal.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-cyan-400 font-bold">•</span>
+            <span><b>Resistencia del Aire (Realidad vs Modelo Ideal):</b> En la atmósfera terrestre real, objetos ligeros como hojas de papel o paracaídas experimentan fricción aerodinámica que limita su aceleración hasta alcanzar la <i>velocidad terminal</i>. Este simulador modela la caída libre ideal pura (vacío), donde solo actúa la gravedad.</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Conclusión Pedagógica Destacada -->
+      <div class="lg:col-span-6 glass-panel p-5 rounded-2xl border border-cyan-800/50 bg-gradient-to-br from-slate-900 via-slate-950 to-cyan-950/30 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center gap-2 text-cyan-400 text-xs font-bold uppercase tracking-wider mb-2">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+            </svg>
+            Conclusión Científica Fundamental
+          </div>
+          <blockquote class="text-sm font-medium text-slate-200 border-l-4 border-cyan-400 pl-3.5 my-3 italic leading-relaxed">
+            “En caída libre ideal, todos los objetos experimentan una aceleración constante debido a la gravedad. La velocidad aumenta durante la caída, mientras que la aceleración permanece constante. La gravedad del planeta determina qué tan rápidamente cambia la velocidad.”
+          </blockquote>
+        </div>
+
+        <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+          <span class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            Simulación Cinemática Verificada
+          </span>
+          <span class="font-mono text-[11px] text-cyan-400">a = −g = cte | v = v₀ − gt</span>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- PIE DE PÁGINA                              -->
+  <!-- ========================================== -->
+  <footer class="border-t border-slate-800/80 bg-slate-950 px-4 py-4 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div>Laboratorio Virtual de Física Clásica • Caída Libre y Cinemática Vectorial</div>
+      <div class="text-slate-400">Desarrollado para educación interactiva e intuitiva</div>
+    </div>
+  </footer>
+
+  <!-- ========================================== -->
+  <!-- CÓDIGO JAVASCRIPT: MOTOR FÍSICO Y GRÁFICAS -->
+  <!-- ========================================== -->
+  <script>
+    /* ==========================================================
+       DATOS DE CUERPOS CELESTES (PLANETAS)
+       ========================================================== */
+    const PLANETS = {
+      tierra: {
+        name: 'Tierra',
+        g: 9.81,
+        color: '#38bdf8', // Cyan/Sky
+        skyColor: ['#0f172a', '#1e3a8a', '#0284c7'],
+        groundColor: '#166534', // Verde hierba
+        surfaceDetail: 'Tierra firme y atmósfera densa',
+        icon: '🌍'
+      },
+      luna: {
+        name: 'Luna',
+        g: 1.62,
+        color: '#cbd5e1', // Slate claro
+        skyColor: ['#020617', '#090d16', '#0f172a'],
+        groundColor: '#475569', // Gris regolito
+        surfaceDetail: 'Regolito lunar y vacío espacial',
+        icon: '🌕'
+      },
+      marte: {
+        name: 'Marte',
+        g: 3.71,
+        color: '#f97316', // Naranja rojizo
+        skyColor: ['#1c1917', '#7c2d12', '#c2410c'],
+        groundColor: '#9a3412', // Rojo marciano
+        surfaceDetail: 'Desierto de óxido de hierro',
+        icon: '🪐'
+      },
+      venus: {
+        name: 'Venus',
+        g: 8.87,
+        color: '#eab308', // Dorado/Azufre
+        skyColor: ['#1c1917', '#713f12', '#a16207'],
+        groundColor: '#854d0e', // Basalto volcánico
+        surfaceDetail: 'Nubes densas de ácido sulfúrico',
+        icon: '🟡'
+      },
+      jupiter: {
+        name: 'Júpiter',
+        g: 24.79,
+        color: '#ec4899', // Magenta / Ámbar violáceo
+        skyColor: ['#18181b', '#581c87', '#9d174d'],
+        groundColor: '#701a75', // Capas turbulentas de hidrógeno
+        surfaceDetail: 'Atmósfera joviana de alta presión',
+        icon: '⚡'
+      },
+      mercurio: {
+        name: 'Mercurio',
+        g: 3.70,
+        color: '#94a3b8', // Gris metálico
+        skyColor: ['#020617', '#030712', '#090d16'],
+        groundColor: '#334155', // Cuencas de impacto
+        surfaceDetail: 'Cráteres y radiación solar extrema',
+        icon: '🌑'
+      }
+    };
+
+    /* ==========================================================
+       ESTADO GLOBAL DEL SIMULADOR
+       ========================================================== */
+    const state = {
+      // Parámetros físicos
+      h0: 50.0,            // Altura inicial en metros
+      v0: 0.0,             // Velocidad inicial en m/s (+ arriba, - abajo)
+      planetKey: 'tierra', // Clave del planeta
+      time: 0.0,           // Tiempo actual de la animación (s)
+      timeMax: 0.0,        // Tiempo total hasta impacto (s)
+      vMax: 0.0,           // Velocidad de impacto (m/s)
+      apexHeight: 50.0,    // Altura máxima alcanzada (si v0 > 0)
+      
+      // Control de reproducción
+      isPlaying: false,
+      speedMultiplier: 1.0,
+      lastTimestamp: null,
+      hasImpacted: false,
+
+      // Opciones visuales
+      showVectors: true,
+      showValues: true,
+      showTrail: true,
+      showPlots: true,
+      audioEnabled: false,
+
+      // Efectos visuales de impacto y partículas
+      particles: [],
+      trailPoints: []
+    };
+
+    /* ==========================================================
+       SÍNTESIS DE AUDIO CON WEB AUDIO API
+       ========================================================== */
+    let audioCtx = null;
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) audioCtx = new AudioContext();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playSound(type) {
+      if (!state.audioEnabled) return;
+      try {
+        initAudio();
+        if (!audioCtx) return;
+
+        const now = audioCtx.currentTime;
+        if (type === 'drop') {
+          // Tono suave al soltar la piedra
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(440, now);
+          osc.frequency.exponentialRampToValueAtTime(220, now + 0.15);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.15);
+        } else if (type === 'impact') {
+          // Golpe de impacto de baja frecuencia
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(120, now);
+          osc.frequency.exponentialRampToValueAtTime(30, now + 0.25);
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.25);
+        }
+      } catch (e) {
+        console.warn('Audio no disponible:', e);
+      }
+    }
+
+    /* ==========================================================
+       MODELO FÍSICO EXACTO
+       ========================================================== */
+    function getGravity() {
+      return PLANETS[state.planetKey].g;
+    }
+
+    // Calcula tiempo de impacto y magnitudes extremas
+    function recalculatePhysicsModel() {
+      const g = getGravity();
+      const h0 = state.h0;
+      const v0 = state.v0;
+
+      // Solución analítica para h(t) = 0: h0 + v0*t - 0.5*g*t^2 = 0
+      // 0.5*g*t^2 - v0*t - h0 = 0
+      const discriminant = v0 * v0 + 2 * g * h0;
+      const tImpact = (v0 + Math.sqrt(discriminant)) / g;
+
+      state.timeMax = Math.max(0.01, tImpact);
+      state.vMax = Math.abs(v0 - g * state.timeMax);
+
+      // Si v0 > 0, alcanza un vértice antes de caer
+      if (v0 > 0) {
+        state.apexHeight = h0 + (v0 * v0) / (2 * g);
+      } else {
+        state.apexHeight = h0;
+      }
+
+      // Asegurar que el tiempo actual no supere el nuevo timeMax si se cambia parámetro
+      if (state.time > state.timeMax) {
+        state.time = state.timeMax;
+      }
+
+      updateTelemetryUI();
+      updateComparisonTable();
+      renderAllPlots();
+    }
+
+    // Retorna { h, v, a } para cualquier instante t
+    function getKinematicsAt(t) {
+      const g = getGravity();
+      const clampedT = Math.max(0, Math.min(t, state.timeMax));
+
+      // Ecuaciones ideales de caída libre
+      const h = state.h0 + state.v0 * clampedT - 0.5 * g * clampedT * clampedT;
+      const v = state.v0 - g * clampedT;
+      const a = -g;
+
+      return {
+        h: Math.max(0, h),
+        v: v,
+        a: a,
+        speed: Math.abs(v),
+        t: clampedT
+      };
+    }
+
+    /* ==========================================================
+       CANVAS PRINCIPAL DE SIMULACIÓN Y RENDERIZADO
+       ========================================================== */
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      const container = document.getElementById('canvasContainer');
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = container.clientWidth * dpr;
+      canvas.height = container.clientHeight * dpr;
+      ctx.scale(dpr, dpr);
+      renderSimulation();
+    }
+
+    // Convierte coordenadas físicas (metros) a coordenadas de pantalla (píxeles)
+    function worldToScreen(heightMeters) {
+      const w = canvas.width / (window.devicePixelRatio || 1);
+      const h = canvas.height / (window.devicePixelRatio || 1);
+
+      const marginY = 65; // Margen superior para ver el cielo
+      const groundY = h - 60; // Línea de suelo
+      const maxDisplayH = Math.max(state.apexHeight * 1.15, state.h0 * 1.15, 10);
+
+      const scale = (groundY - marginY) / maxDisplayH;
+      const screenY = groundY - (heightMeters * scale);
+      const screenX = w * 0.48; // Centrado horizontal ligeramente a la derecha de la regla
+
+      return { x: screenX, y: screenY, groundY, scale };
+    }
+
+    // Dibuja el fondo temático según el cuerpo celeste seleccionado
+    function drawSkyAndEnvironment(groundY, w, h) {
+      const planet = PLANETS[state.planetKey];
+
+      // Degradado atmosférico
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, groundY);
+      skyGrad.addColorStop(0, planet.skyColor[0]);
+      skyGrad.addColorStop(0.6, planet.skyColor[1]);
+      skyGrad.addColorStop(1, planet.skyColor[2]);
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, w, groundY);
+
+      // Estrellas en cuerpos sin atmósfera densa (Luna, Mercurio)
+      if (state.planetKey === 'luna' || state.planetKey === 'mercurio') {
+        ctx.fillStyle = '#ffffff';
+        for (let i = 0; i < 40; i++) {
+          const sx = ((i * 73 + 17) % w);
+          const sy = ((i * 47 + 23) % (groundY * 0.8));
+          const rad = (i % 3 === 0) ? 1.5 : 0.8;
+          ctx.beginPath();
+          ctx.arc(sx, sy, rad, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Suelo y estrato geológico
+      const groundGrad = ctx.createLinearGradient(0, groundY, 0, h);
+      groundGrad.addColorStop(0, planet.groundColor);
+      groundGrad.addColorStop(1, '#090d16');
+      ctx.fillStyle = groundGrad;
+      ctx.fillRect(0, groundY, w, h - groundY);
+
+      // Línea de referencia del suelo con luz láser sutil
+      ctx.beginPath();
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2;
+      ctx.moveTo(0, groundY);
+      ctx.lineTo(w, groundY);
+      ctx.stroke();
+
+      // Etiqueta del suelo (Datum h = 0 m)
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = 'bold 11px monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText('NIVEL DE SUELO: h = 0 m', w - 20, groundY - 8);
+    }
+
+    // Dibuja la torre de medición / regla graduada a la izquierda
+    function drawMetricalRuler(groundY, scale, maxH) {
+      const rulerX = 55;
+      const w = canvas.width / (window.devicePixelRatio || 1);
+
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)';
+      ctx.lineWidth = 2;
+      ctx.moveTo(rulerX, groundY);
+      ctx.lineTo(rulerX, groundY - maxH * scale);
+      ctx.stroke();
+
+      // Intervalos métricos
+      const step = maxH > 120 ? 20 : (maxH > 60 ? 10 : 5);
+      ctx.font = '10px monospace';
+      ctx.fillStyle = '#94a3b8';
+      ctx.textAlign = 'right';
+
+      for (let m = 0; m <= maxH; m += step) {
+        const y = groundY - m * scale;
+        ctx.beginPath();
+        ctx.strokeStyle = (m % (step * 2) === 0) ? 'rgba(56, 189, 248, 0.6)' : 'rgba(148, 163, 184, 0.4)';
+        ctx.lineWidth = (m % (step * 2) === 0) ? 2 : 1;
+        ctx.moveTo(rulerX - 8, y);
+        ctx.lineTo(rulerX + 8, y);
+        ctx.stroke();
+
+        ctx.fillText(m + ' m', rulerX - 12, y + 3);
+
+        // Línea tenue horizontal proyectada
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+        ctx.lineWidth = 1;
+        ctx.moveTo(rulerX + 10, y);
+        ctx.lineTo(w * 0.9, y);
+        ctx.stroke();
+      }
+    }
+
+    // Dibuja vectores con flechas dinámicas y etiquetas
+    function drawVectorArrow(x, y, dx, dy, color, label, valueText, isRightSide) {
+      if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
+
+      const headlen = 9;
+      const angle = Math.atan2(dy, dx);
+
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 8;
+
+      // Cuerpo de la flecha
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + dx, y + dy);
+      ctx.stroke();
+
+      // Cabeza de la flecha
+      ctx.beginPath();
+      ctx.moveTo(x + dx, y + dy);
+      ctx.lineTo(x + dx - headlen * Math.cos(angle - Math.PI / 6), y + dy - headlen * Math.sin(angle - Math.PI / 6));
+      ctx.lineTo(x + dx - headlen * Math.cos(angle + Math.PI / 6), y + dy - headlen * Math.sin(angle + Math.PI / 6));
+      ctx.closePath();
+      ctx.fill();
+
+      // Plaquita / Badge con etiqueta y valor numérico
+      if (state.showValues) {
+        ctx.shadowBlur = 0;
+        const badgeX = isRightSide ? (x + dx + 14) : (x + dx - 14);
+        const badgeY = y + dy / 2;
+
+        ctx.font = 'bold 11px system-ui, sans-serif';
+        const txt = `${label}: ${valueText}`;
+        const textWidth = ctx.measureText(txt).width;
+
+        const boxX = isRightSide ? badgeX : (badgeX - textWidth - 12);
+        const boxY = badgeY - 11;
+
+        // Fondo del badge
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+        ctx.beginPath();
+        ctx.roundRect(boxX, boxY, textWidth + 12, 22, 6);
+        ctx.fill();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Texto
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'left';
+        ctx.fillText(txt, boxX + 6, boxY + 15);
+      }
+
+      ctx.restore();
+    }
+
+    // Renderiza la simulación completa
+    function renderSimulation() {
+      const w = canvas.width / (window.devicePixelRatio || 1);
+      const h = canvas.height / (window.devicePixelRatio || 1);
+
+      ctx.clearRect(0, 0, w, h);
+
+      const kin = getKinematicsAt(state.time);
+      const pos = worldToScreen(kin.h);
+      const maxH = Math.max(state.apexHeight * 1.15, state.h0 * 1.15, 10);
+
+      // 1. Fondo atmosférico y suelo
+      drawSkyAndEnvironment(pos.groundY, w, h);
+
+      // 2. Regla métrica lateral
+      drawMetricalRuler(pos.groundY, pos.scale, maxH);
+
+      // 3. Estela / Rastro de la caída
+      if (state.showTrail && state.trailPoints.length > 1) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        state.trailPoints.forEach((pt, idx) => {
+          const s = worldToScreen(pt.h);
+          if (idx === 0) ctx.moveTo(s.x, s.y);
+          else ctx.lineTo(s.x, s.y);
+        });
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // 4. Proyección de altura horizontal (línea auxiliar hacia la regla)
+      ctx.save();
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(55, pos.y);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+
+      // Badge de altura sobre la regla
+      ctx.fillStyle = '#38bdf8';
+      ctx.beginPath();
+      ctx.arc(55, pos.y, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // 5. Partículas de impacto
+      updateAndDrawParticles();
+
+      // 6. La Piedra
+      const stoneRadius = 16;
+      ctx.save();
+      ctx.translate(pos.x, pos.y);
+
+      // Sombra sutil de la piedra en el suelo si está cerca
+      const distToGround = pos.groundY - pos.y;
+      if (distToGround < 120 && distToGround > 0) {
+        ctx.save();
+        ctx.translate(0, distToGround);
+        const shadowScale = Math.max(0.2, 1 - (distToGround / 120));
+        ctx.scale(shadowScale, shadowScale * 0.3);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+        ctx.beginPath();
+        ctx.arc(0, 0, stoneRadius * 1.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Cuerpo de la piedra con textura y brillo esférico
+      const stoneGrad = ctx.createRadialGradient(-5, -5, 2, 0, 0, stoneRadius);
+      stoneGrad.addColorStop(0, '#94a3b8');
+      stoneGrad.addColorStop(0.6, '#475569');
+      stoneGrad.addColorStop(1, '#1e293b');
+      ctx.fillStyle = stoneGrad;
+      ctx.beginPath();
+      ctx.arc(0, 0, stoneRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Brillo especular
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.beginPath();
+      ctx.arc(-5, -6, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore(); // Fin dibujo piedra
+
+      // 7. Vectores Cinemáticos (Velocidad y Aceleración)
+      if (state.showVectors) {
+        // Separación horizontal para que no se superpongan:
+        // Vector Velocidad a la izquierda (x - 22)
+        // Vector Aceleración a la derecha (x + 22)
+        const vScale = 2.4; // Escala visual de píxeles por m/s
+        const aScale = 3.5; // Escala visual de píxeles por m/s²
+
+        // Vector Velocidad v(t):
+        // En coordenadas de pantalla: 'dy' positivo va hacia abajo, 'dy' negativo hacia arriba.
+        // Como v < 0 es hacia abajo, dyScreen = -v * vScale.
+        const vArrowDy = -kin.v * vScale;
+        const vArrowX = pos.x - 26;
+        const vLabel = (kin.v < 0 ? '−' : (kin.v > 0 ? '+' : '')) + Math.abs(kin.v).toFixed(1) + ' m/s';
+        
+        drawVectorArrow(
+          vArrowX, pos.y,
+          0, vArrowDy,
+          '#06b6d4', // Cyan
+          'v',
+          vLabel,
+          false // Lado izquierdo
+        );
+
+        // Vector Aceleración a(t):
+        // Siempre apunta hacia abajo (gravedad g atrae hacia el suelo): dyScreen = g * aScale
+        const aArrowDy = Math.abs(kin.a) * aScale;
+        const aArrowX = pos.x + 26;
+        const aLabel = '−' + Math.abs(kin.a).toFixed(2) + ' m/s²';
+
+        drawVectorArrow(
+          aArrowX, pos.y,
+          0, aArrowDy,
+          '#f43f5e', // Rose
+          'a',
+          aLabel,
+          true // Lado derecho
+        );
+      }
+    }
+
+    // Sistema de partículas para el polvo/impacto con el suelo
+    function spawnImpactParticles(x, y) {
+      state.particles = [];
+      const count = 35;
+      const color = PLANETS[state.planetKey].color;
+      for (let i = 0; i < count; i++) {
+        const angle = Math.PI + (Math.random() * Math.PI); // Hacia arriba en abanico
+        const speed = 2 + Math.random() * 8;
+        state.particles.push({
+          x: x,
+          y: y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 1.0,
+          decay: 0.02 + Math.random() * 0.03,
+          size: 2 + Math.random() * 4,
+          color: color
+        });
+      }
+    }
+
+    function updateAndDrawParticles() {
+      if (state.particles.length === 0) return;
+      ctx.save();
+      for (let i = state.particles.length - 1; i >= 0; i--) {
+        const p = state.particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.2; // Gravedad en las partículas
+        p.life -= p.decay;
+
+        if (p.life <= 0) {
+          state.particles.splice(i, 1);
+          continue;
+        }
+
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    /* ==========================================================
+       TRES GRÁFICAS SINCRONIZADAS (POSICIÓN, VELOCIDAD, ACELERACIÓN)
+       ========================================================== */
+    const plotHeightCanvas = document.getElementById('canvasPlotHeight');
+    const plotVelocityCanvas = document.getElementById('canvasPlotVelocity');
+    const plotAccelerationCanvas = document.getElementById('canvasPlotAcceleration');
+
+    function renderPlot(canvasEl, type) {
+      if (!state.showPlots) return;
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvasEl.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+
+      canvasEl.width = rect.width * dpr;
+      canvasEl.height = rect.height * dpr;
+      const pctx = canvasEl.getContext('2d');
+      pctx.scale(dpr, dpr);
+
+      const w = rect.width;
+      const h = rect.height;
+      const padL = 36;
+      const padR = 15;
+      const padT = 15;
+      const padB = 25;
+      const plotW = w - padL - padR;
+      const plotH = h - padT - padB;
+
+      pctx.clearRect(0, 0, w, h);
+
+      // Rejilla de fondo
+      pctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+      pctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i++) {
+        const gy = padT + (plotH / 4) * i;
+        pctx.beginPath();
+        pctx.moveTo(padL, gy);
+        pctx.lineTo(w - padR, gy);
+        pctx.stroke();
+
+        const gx = padL + (plotW / 4) * i;
+        pctx.beginPath();
+        pctx.moveTo(gx, padT);
+        pctx.lineTo(gx, h - padB);
+        pctx.stroke();
+      }
+
+      // Ejes coordenados
+      pctx.strokeStyle = 'rgba(148, 163, 184, 0.4)';
+      pctx.lineWidth = 1.5;
+      pctx.beginPath();
+      pctx.moveTo(padL, padT);
+      pctx.lineTo(padL, h - padB);
+      pctx.lineTo(w - padR, h - padB);
+      pctx.stroke();
+
+      const tMax = state.timeMax;
+      const curT = state.time;
+
+      // Renderizado según tipo de gráfico
+      if (type === 'height') {
+        const yMax = Math.max(state.apexHeight * 1.1, 10);
+        const yMin = 0;
+
+        // Función de mapeo
+        const tx = (t) => padL + (t / tMax) * plotW;
+        const ty = (val) => (h - padB) - ((val - yMin) / (yMax - yMin)) * plotH;
+
+        // Curva teórica completa (parábola tenue)
+        pctx.beginPath();
+        pctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
+        pctx.lineWidth = 2;
+        pctx.setLineDash([3, 3]);
+        const steps = 60;
+        for (let s = 0; s <= steps; s++) {
+          const tVal = (s / steps) * tMax;
+          const k = getKinematicsAt(tVal);
+          const px = tx(tVal);
+          const py = ty(k.h);
+          if (s === 0) pctx.moveTo(px, py);
+          else pctx.lineTo(px, py);
+        }
+        pctx.stroke();
+        pctx.setLineDash([]);
+
+        // Curva recorrida hasta el instante actual (brillante sólida)
+        pctx.beginPath();
+        pctx.strokeStyle = '#06b6d4';
+        pctx.lineWidth = 2.5;
+        pctx.shadowColor = '#06b6d4';
+        pctx.shadowBlur = 6;
+        const currentSteps = Math.max(2, Math.floor((curT / tMax) * steps));
+        for (let s = 0; s <= currentSteps; s++) {
+          const tVal = (s / currentSteps) * curT;
+          const k = getKinematicsAt(tVal);
+          const px = tx(tVal);
+          const py = ty(k.h);
+          if (s === 0) pctx.moveTo(px, py);
+          else pctx.lineTo(px, py);
+        }
+        pctx.stroke();
+        pctx.shadowBlur = 0;
+
+        // Marcador puntual en el tiempo actual
+        const curK = getKinematicsAt(curT);
+        const cx = tx(curT);
+        const cy = ty(curK.h);
+
+        pctx.fillStyle = '#ffffff';
+        pctx.beginPath();
+        pctx.arc(cx, cy, 4.5, 0, Math.PI * 2);
+        pctx.fill();
+        pctx.strokeStyle = '#06b6d4';
+        pctx.lineWidth = 2;
+        pctx.stroke();
+
+        // Texto de etiquetas numéricas en ejes
+        pctx.fillStyle = '#94a3b8';
+        pctx.font = '9px monospace';
+        pctx.textAlign = 'right';
+        pctx.fillText(yMax.toFixed(0) + 'm', padL - 4, padT + 8);
+        pctx.fillText('0m', padL - 4, h - padB);
+        pctx.textAlign = 'center';
+        pctx.fillText('0s', padL, h - 10);
+        pctx.fillText(tMax.toFixed(1) + 's', w - padR, h - 10);
+
+      } else if (type === 'velocity') {
+        // En caída libre, la velocidad va de v0 hacia -vMax
+        const maxV = Math.max(state.v0, 0);
+        const minV = -state.vMax;
+        const spanV = Math.max(1, maxV - minV);
+
+        const tx = (t) => padL + (t / tMax) * plotW;
+        const ty = (val) => padT + ((maxV - val) / spanV) * plotH;
+
+        // Línea del cero si aplica
+        if (maxV > 0 && minV < 0) {
+          const zeroY = ty(0);
+          pctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+          pctx.setLineDash([2, 2]);
+          pctx.beginPath();
+          pctx.moveTo(padL, zeroY);
+          pctx.lineTo(w - padR, zeroY);
+          pctx.stroke();
+          pctx.setLineDash([]);
+        }
+
+        // Recta teórica completa
+        pctx.beginPath();
+        pctx.strokeStyle = 'rgba(16, 185, 129, 0.25)';
+        pctx.lineWidth = 2;
+        pctx.setLineDash([3, 3]);
+        pctx.moveTo(tx(0), ty(state.v0));
+        pctx.lineTo(tx(tMax), ty(-state.vMax));
+        pctx.stroke();
+        pctx.setLineDash([]);
+
+        // Recta recorrida hasta el instante actual
+        const curK = getKinematicsAt(curT);
+        pctx.beginPath();
+        pctx.strokeStyle = '#10b981';
+        pctx.lineWidth = 2.5;
+        pctx.shadowColor = '#10b981';
+        pctx.shadowBlur = 6;
+        pctx.moveTo(tx(0), ty(state.v0));
+        pctx.lineTo(tx(curT), ty(curK.v));
+        pctx.stroke();
+        pctx.shadowBlur = 0;
+
+        // Marcador puntual actual
+        const cx = tx(curT);
+        const cy = ty(curK.v);
+        pctx.fillStyle = '#ffffff';
+        pctx.beginPath();
+        pctx.arc(cx, cy, 4.5, 0, Math.PI * 2);
+        pctx.fill();
+        pctx.strokeStyle = '#10b981';
+        pctx.lineWidth = 2;
+        pctx.stroke();
+
+        // Texto de etiquetas en ejes
+        pctx.fillStyle = '#94a3b8';
+        pctx.font = '9px monospace';
+        pctx.textAlign = 'right';
+        pctx.fillText(maxV.toFixed(0), padL - 4, padT + 8);
+        pctx.fillText((-state.vMax).toFixed(0), padL - 4, h - padB);
+        pctx.textAlign = 'center';
+        pctx.fillText('0s', padL, h - 10);
+        pctx.fillText(tMax.toFixed(1) + 's', w - padR, h - 10);
+
+      } else if (type === 'acceleration') {
+        const gVal = getGravity();
+        const yTop = -gVal * 1.5;
+        const yBot = 0;
+
+        const tx = (t) => padL + (t / tMax) * plotW;
+        const ty = (val) => padT + ((yBot - val) / (yBot - yTop)) * plotH;
+
+        const constY = ty(-gVal);
+
+        // Recta horizontal completa teórica
+        pctx.beginPath();
+        pctx.strokeStyle = 'rgba(244, 63, 94, 0.25)';
+        pctx.lineWidth = 2;
+        pctx.setLineDash([3, 3]);
+        pctx.moveTo(padL, constY);
+        pctx.lineTo(w - padR, constY);
+        pctx.stroke();
+        pctx.setLineDash([]);
+
+        // Recta horizontal recorrida
+        pctx.beginPath();
+        pctx.strokeStyle = '#f43f5e';
+        pctx.lineWidth = 2.5;
+        pctx.shadowColor = '#f43f5e';
+        pctx.shadowBlur = 6;
+        pctx.moveTo(padL, constY);
+        pctx.lineTo(tx(curT), constY);
+        pctx.stroke();
+        pctx.shadowBlur = 0;
+
+        // Marcador puntual actual
+        const cx = tx(curT);
+        pctx.fillStyle = '#ffffff';
+        pctx.beginPath();
+        pctx.arc(cx, constY, 4.5, 0, Math.PI * 2);
+        pctx.fill();
+        pctx.strokeStyle = '#f43f5e';
+        pctx.lineWidth = 2;
+        pctx.stroke();
+
+        // Etiquetas
+        pctx.fillStyle = '#94a3b8';
+        pctx.font = '9px monospace';
+        pctx.textAlign = 'right';
+        pctx.fillText('0', padL - 4, padT + 8);
+        pctx.fillText(( -gVal ).toFixed(1), padL - 4, constY - 4);
+        pctx.textAlign = 'center';
+        pctx.fillText('0s', padL, h - 10);
+        pctx.fillText(tMax.toFixed(1) + 's', w - padR, h - 10);
+      }
+    }
+
+    function renderAllPlots() {
+      renderPlot(plotHeightCanvas, 'height');
+      renderPlot(plotVelocityCanvas, 'velocity');
+      renderPlot(plotAccelerationCanvas, 'acceleration');
+    }
+
+    /* ==========================================================
+       ACTUALIZACIÓN DE INTERFAZ Y TELEMETRÍA (DOM)
+       ========================================================== */
+    function updateTelemetryUI() {
+      const kin = getKinematicsAt(state.time);
+      const g = getGravity();
+
+      // Telemetría numérica
+      document.getElementById('telemetryTime').textContent = kin.t.toFixed(2);
+      document.getElementById('telemetryMaxTime').textContent = state.timeMax.toFixed(2) + ' s';
+      document.getElementById('telemetryHeight').textContent = kin.h.toFixed(1);
+      document.getElementById('telemetryInitialHeight').textContent = state.h0.toFixed(1) + ' m';
+      document.getElementById('telemetryVelocity').textContent = (kin.v < 0 ? '−' : (kin.v > 0 ? '+' : '')) + Math.abs(kin.v).toFixed(1);
+      document.getElementById('telemetrySpeedKmh').textContent = (kin.speed * 3.6).toFixed(1) + ' km/h';
+      document.getElementById('telemetryGravity').textContent = g.toFixed(2);
+      document.getElementById('telemetryMaxVelocity').textContent = state.vMax.toFixed(2);
+      document.getElementById('telemetryMaxVelocityKmh').textContent = (state.vMax * 3.6).toFixed(1) + ' km/h';
+
+      // Scrubber temporal
+      const timePercent = (state.time / state.timeMax) * 100;
+      const timeScrubber = document.getElementById('timeScrubber');
+      timeScrubber.value = timePercent;
+      document.getElementById('scrubberTimeDisplay').textContent = `t = ${kin.t.toFixed(2)} s`;
+      document.getElementById('scrubberTotalTime').textContent = `${state.timeMax.toFixed(2)} s`;
+
+      // Tiempo restante hasta impacto
+      const remainingTime = Math.max(0, state.timeMax - state.time);
+      document.getElementById('countdownVal').textContent = `${remainingTime.toFixed(2)} s`;
+
+      // Estado en Canvas
+      const canvasStatus = document.getElementById('canvasStatusText');
+      if (state.hasImpacted || state.time >= state.timeMax) {
+        canvasStatus.textContent = '¡Impacto en el suelo!';
+        canvasStatus.className = 'font-bold text-rose-400 ml-1 animate-pulse';
+      } else if (state.isPlaying) {
+        canvasStatus.textContent = 'En caída libre (Acelerando)';
+        canvasStatus.className = 'font-bold text-cyan-400 ml-1';
+      } else if (state.time > 0) {
+        canvasStatus.textContent = 'Pausado';
+        canvasStatus.className = 'font-bold text-amber-400 ml-1';
+      } else {
+        canvasStatus.textContent = 'Listo para soltar';
+        canvasStatus.className = 'font-bold text-cyan-400 ml-1';
+      }
+
+      // Medidor de Transformación de Energía (Masa m = 1 kg normalizada)
+      const mass = 1.0;
+      const Ep = mass * g * kin.h;
+      const Ek = 0.5 * mass * kin.v * kin.v;
+      const Em = Math.max(0.001, Ep + Ek);
+
+      const percentEk = Math.min(100, Math.max(0, (Ek / Em) * 100));
+      const percentEp = 100 - percentEk;
+
+      document.getElementById('barKinetic').style.width = percentEk + '%';
+      document.getElementById('barPotential').style.width = percentEp + '%';
+      document.getElementById('valEk').textContent = Math.round(Ek) + ' J';
+      document.getElementById('valEp').textContent = Math.round(Ep) + ' J';
+      document.getElementById('energyTotalLabel').textContent = `Ek: ${Math.round(percentEk)}% | Ep: ${Math.round(percentEp)}%`;
+
+      // Barra de gravedad comparativa
+      const jupiterG = PLANETS.jupiter.g;
+      const gRatio = ((g / jupiterG) * 100).toFixed(1);
+      document.getElementById('gravityRatioLabel').textContent = gRatio + '%';
+      document.getElementById('gravityBar').style.width = gRatio + '%';
+
+      // Etiqueta de altura en comparativa planetaria
+      document.getElementById('compareCurrentHeight').textContent = state.h0.toFixed(1) + ' m';
+    }
+
+    /* ==========================================================
+       CICLO DE ANIMACIÓN PRINCIPAL (REQUEST ANIMATION FRAME)
+       ========================================================== */
+    function animationLoop(timestamp) {
+      if (!state.lastTimestamp) state.lastTimestamp = timestamp;
+      const dt = (timestamp - state.lastTimestamp) / 1000;
+      state.lastTimestamp = timestamp;
+
+      if (state.isPlaying) {
+        // Avance de tiempo según multiplicador de velocidad
+        state.time += dt * state.speedMultiplier;
+
+        // Comprobación exacta de impacto con el suelo
+        if (state.time >= state.timeMax) {
+          state.time = state.timeMax;
+          state.isPlaying = false;
+          state.hasImpacted = true;
+
+          // Sonido y partículas de impacto
+          playSound('impact');
+          const kin = getKinematicsAt(state.time);
+          const pos = worldToScreen(kin.h);
+          spawnImpactParticles(pos.x, pos.groundY);
+
+          // Mostrar banner de impacto
+          const banner = document.getElementById('impactBanner');
+          banner.classList.remove('opacity-0');
+
+          // Actualizar botón
+          updatePlayButtonUI();
+        }
+
+        // Agregar punto a la estela
+        const curK = getKinematicsAt(state.time);
+        state.trailPoints.push({ h: curK.h, t: state.time });
+        if (state.trailPoints.length > 80) state.trailPoints.shift();
+
+        updateTelemetryUI();
+        renderAllPlots();
+      }
+
+      renderSimulation();
+      requestAnimationFrame(animationLoop);
+    }
+
+    function updatePlayButtonUI() {
+      const btn = document.getElementById('btnPlayPause');
+      const iconPlay = document.getElementById('iconPlay');
+      const iconPause = document.getElementById('iconPause');
+      const label = document.getElementById('labelPlayPause');
+
+      if (state.isPlaying) {
+        iconPlay.classList.add('hidden');
+        iconPause.classList.remove('hidden');
+        label.textContent = 'Pausar';
+        btn.classList.remove('from-cyan-500', 'to-sky-600');
+        btn.classList.add('from-amber-500', 'to-orange-600');
+      } else {
+        iconPlay.classList.remove('hidden');
+        iconPause.classList.add('hidden');
+        label.textContent = (state.time >= state.timeMax) ? 'Soltar de Nuevo' : (state.time > 0 ? 'Reanudar' : 'Soltar Piedra');
+        btn.classList.remove('from-amber-500', 'to-orange-600');
+        btn.classList.add('from-cyan-500', 'to-sky-600');
+      }
+    }
+
+    function togglePlayPause() {
+      if (state.hasImpacted || state.time >= state.timeMax) {
+        // Si ya impactó, reiniciar y volver a soltar
+        resetSimulation();
+      }
+
+      state.isPlaying = !state.isPlaying;
+      if (state.isPlaying) {
+        if (state.time === 0) playSound('drop');
+        document.getElementById('impactBanner').classList.add('opacity-0');
+        document.getElementById('countdownBox').classList.remove('hidden');
+      }
+      updatePlayButtonUI();
+    }
+
+    function resetSimulation() {
+      state.isPlaying = false;
+      state.time = 0.0;
+      state.hasImpacted = false;
+      state.lastTimestamp = null;
+      state.particles = [];
+      state.trailPoints = [];
+
+      document.getElementById('impactBanner').classList.add('opacity-0');
+      document.getElementById('countdownBox').classList.add('hidden');
+
+      updatePlayButtonUI();
+      updateTelemetryUI();
+      renderAllPlots();
+      renderSimulation();
+    }
+
+    /* ==========================================================
+       CONSTRUCCIÓN DE SELECTORES DINÁMICOS Y COMPARATIVAS
+       ========================================================== */
+    function buildPlanetSelectors() {
+      const grid = document.getElementById('planetSelectorGrid');
+      grid.innerHTML = '';
+
+      Object.entries(PLANETS).forEach(([key, p]) => {
+        const isSelected = key === state.planetKey;
+        const btn = document.createElement('button');
+        btn.className = `p-2.5 rounded-xl border text-left flex flex-col justify-between transition-all ${
+          isSelected
+            ? 'bg-cyan-950/80 border-cyan-400 text-white shadow-lg shadow-cyan-500/10'
+            : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+        }`;
+        btn.innerHTML = `
+          <div class="flex items-center justify-between w-full">
+            <span class="text-sm font-bold">${p.icon} ${p.name}</span>
+            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${isSelected ? 'bg-cyan-900 text-cyan-300' : 'bg-slate-800 text-slate-400'}">${p.g}</span>
+          </div>
+          <span class="text-[10px] text-slate-500 mt-1">${p.g} m/s²</span>
+        `;
+        btn.addEventListener('click', () => {
+          selectPlanet(key);
+        });
+        grid.appendChild(btn);
+      });
+    }
+
+    function selectPlanet(key) {
+      if (!PLANETS[key]) return;
+      state.planetKey = key;
+      const p = PLANETS[key];
+
+      // Actualizar cabecera
+      document.getElementById('headerPlanetName').textContent = p.name;
+      document.getElementById('headerPlanetGravity').textContent = p.g.toFixed(2) + ' m/s²';
+
+      // Reconstruir botones de selección
+      buildPlanetSelectors();
+
+      // Recalcular cinemática y re-renderizar
+      resetSimulation();
+      recalculatePhysicsModel();
+    }
+
+    function updateComparisonTable() {
+      const tbody = document.getElementById('planetComparisonTableBody');
+      tbody.innerHTML = '';
+
+      const maxG = PLANETS.jupiter.g;
+
+      Object.entries(PLANETS).forEach(([key, p]) => {
+        const g = p.g;
+        const h0 = state.h0;
+        const v0 = state.v0;
+        const discriminant = v0 * v0 + 2 * g * h0;
+        const tImp = (v0 + Math.sqrt(discriminant)) / g;
+        const vImp = Math.abs(v0 - g * tImp);
+
+        const isCurrent = key === state.planetKey;
+        const barPct = ((g / maxG) * 100).toFixed(0);
+
+        const tr = document.createElement('tr');
+        tr.className = `hover:bg-slate-800/40 transition ${isCurrent ? 'bg-cyan-950/30 font-semibold' : ''}`;
+        tr.innerHTML = `
+          <td class="p-3 flex items-center gap-2">
+            <span>${p.icon}</span>
+            <span class="${isCurrent ? 'text-cyan-300' : 'text-slate-200'}">${p.name}</span>
+            ${isCurrent ? '<span class="text-[10px] bg-cyan-900 text-cyan-300 px-1.5 py-0.5 rounded font-mono">Actual</span>' : ''}
+          </td>
+          <td class="p-3 font-mono ${isCurrent ? 'text-cyan-400' : 'text-slate-300'}">${g.toFixed(2)} m/s²</td>
+          <td class="p-3 w-36">
+            <div class="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+              <div class="h-full bg-cyan-400 rounded-full" style="width: ${barPct}%"></div>
+            </div>
+          </td>
+          <td class="p-3 font-mono text-slate-200">${tImp.toFixed(2)} s</td>
+          <td class="p-3 font-mono text-slate-200">${vImp.toFixed(2)} m/s <span class="text-[10px] text-slate-500">(${(vImp * 3.6).toFixed(0)} km/h)</span></td>
+          <td class="p-3 text-right">
+            <button class="px-2.5 py-1 text-[11px] rounded bg-slate-800 hover:bg-cyan-600 text-slate-300 hover:text-white transition font-medium" onclick="selectPlanet('${key}')">
+              ${isCurrent ? 'Seleccionado' : 'Probar'}
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    /* ==========================================================
+       EXPERIMENTOS "¿QUÉ PASARÍA SI...?" (CASOS EDUCATIVOS)
+       ========================================================== */
+    const EXPERIMENTS = {
+      'double-height': {
+        title: 'Hipótesis 1: Duplicar la altura de caída',
+        apply: () => {
+          const newH = Math.min(200, state.h0 * 2);
+          state.h0 = (state.h0 >= 100) ? 100 : newH;
+          state.v0 = 0.0;
+          state.planetKey = 'tierra';
+        },
+        explain: 'Al duplicar la altura inicial (h₀), el tiempo de caída NO se duplica, sino que se multiplica por √2 ≈ 1.414 (+41.4% de tiempo). Esto ocurre porque la distancia depende del cuadrado del tiempo: h = ½gt² ⇒ t = √(2h/g). Además, la velocidad de impacto aumenta exactamente en el mismo factor √2.',
+        formula: 't = √(2h/g)  |  v_impacto = √(2gh)'
+      },
+      'earth-to-moon': {
+        title: 'Hipótesis 2: Caída libre en la Luna vs. la Tierra',
+        apply: () => {
+          state.planetKey = 'luna';
+          state.v0 = 0.0;
+        },
+        explain: 'La gravedad en la superficie lunar (1.62 m/s²) es casi 6 veces menor que la de la Tierra (9.81 m/s²). Por tanto, la aceleración constante es solo 1/6, la piedra cae en "cámara lenta" natural tardando √(9.81 / 1.62) ≈ 2.46 veces más en llegar al suelo, e impacta con mucha menos energía cinética.',
+        formula: 'g_luna ≈ g_tierra / 6.05  ⇒  t_luna ≈ 2.46 · t_tierra'
+      },
+      'downward-launch': {
+        title: 'Hipótesis 3: Lanzamiento con velocidad inicial hacia abajo',
+        apply: () => {
+          state.v0 = -15.0;
+          state.planetKey = 'tierra';
+        },
+        explain: '¡La aceleración sigue siendo exactamente la misma (−9.81 m/s²)! La gravedad no cambia por el hecho de lanzar la piedra con fuerza inicial. Sin embargo, al comenzar ya con velocidad v₀ = −15 m/s, la piedra recorre la distancia en menor tiempo y alcanza una velocidad de impacto considerablemente mayor.',
+        formula: 'a = −g = cte  |  v(t) = v₀ − gt  (v₀ negativo suma rapidez hacia abajo)'
+      },
+      'max-velocity': {
+        title: 'Hipótesis 4: El planeta con mayor violencia de impacto',
+        apply: () => {
+          state.planetKey = 'jupiter';
+          state.v0 = 0.0;
+        },
+        explain: 'Júpiter posee la mayor gravedad superficial del sistema solar (24.79 m/s²), 2.5 veces la de la Tierra. El vector aceleración es el más largo y potente de la simulación, acelerando la piedra a velocidades colosales en una fracción de segundo.',
+        formula: 'v_impacto = √(2 · 24.79 · h₀)  (Mayor ganancia de energía cinética)'
+      }
+    };
+
+    function runHypothesisExperiment(key) {
+      const exp = EXPERIMENTS[key];
+      if (!exp) return;
+
+      exp.apply();
+
+      // Sincronizar inputs numéricos y sliders
+      document.getElementById('sliderHeight').value = state.h0;
+      document.getElementById('numHeight').value = state.h0;
+      document.getElementById('sliderVelocity').value = state.v0;
+      document.getElementById('numVelocity').value = state.v0;
+
+      // Actualizar selectores de planetas
+      buildPlanetSelectors();
+
+      // Recalcular y reiniciar
+      resetSimulation();
+      recalculatePhysicsModel();
+
+      // Mostrar caja explicativa
+      const box = document.getElementById('hypothesisFeedbackBox');
+      box.classList.remove('hidden');
+      document.getElementById('hypothesisTitle').textContent = exp.title;
+      document.getElementById('hypothesisText').textContent = exp.explain;
+      document.getElementById('hypothesisFormula').textContent = exp.formula;
+
+      // Desplazar suavemente hacia la explicación si es necesario
+      box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      // Iniciar simulación automáticamente para que el usuario vea el efecto
+      setTimeout(() => {
+        if (!state.isPlaying) togglePlayPause();
+      }, 300);
+    }
+
+    /* ==========================================================
+       EVENT LISTENERS E INTERACTIVIDAD
+       ========================================================== */
+    function setupEventListeners() {
+      // Botón Play / Pause
+      document.getElementById('btnPlayPause').addEventListener('click', togglePlayPause);
+
+      // Botón Reset
+      document.getElementById('btnReset').addEventListener('click', resetSimulation);
+      document.getElementById('btnHeaderReset').addEventListener('click', resetSimulation);
+
+      // Botón Step (Paso a paso)
+      document.getElementById('btnStep').addEventListener('click', () => {
+        if (state.isPlaying) state.isPlaying = false;
+        state.time = Math.min(state.timeMax, state.time + 0.05);
+        if (state.time >= state.timeMax) state.hasImpacted = true;
+        updatePlayButtonUI();
+        updateTelemetryUI();
+        renderAllPlots();
+        renderSimulation();
+      });
+
+      // Botón Audio
+      document.getElementById('btnAudioToggle').addEventListener('click', () => {
+        state.audioEnabled = !state.audioEnabled;
+        if (state.audioEnabled) initAudio();
+        document.getElementById('iconAudioOn').classList.toggle('hidden', !state.audioEnabled);
+        document.getElementById('iconAudioOff').classList.toggle('hidden', state.audioEnabled);
+      });
+
+      // Selector de velocidad (Cámara lenta)
+      document.querySelectorAll('.btnSpeed').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.btnSpeed').forEach(b => {
+            b.classList.remove('bg-cyan-600', 'text-white', 'font-bold');
+            b.classList.add('text-slate-400');
+          });
+          btn.classList.add('bg-cyan-600', 'text-white', 'font-bold');
+          btn.classList.remove('text-slate-400');
+          state.speedMultiplier = parseFloat(btn.dataset.speed);
+        });
+      });
+
+      // Deslizador de tiempo manual (Scrubber)
+      const timeScrubber = document.getElementById('timeScrubber');
+      timeScrubber.addEventListener('input', (e) => {
+        state.isPlaying = false;
+        const pct = parseFloat(e.target.value);
+        state.time = (pct / 100) * state.timeMax;
+        state.hasImpacted = (state.time >= state.timeMax);
+
+        updatePlayButtonUI();
+        updateTelemetryUI();
+        renderAllPlots();
+        renderSimulation();
+      });
+
+      // Slider y número de Altura (h0)
+      const sliderHeight = document.getElementById('sliderHeight');
+      const numHeight = document.getElementById('numHeight');
+
+      sliderHeight.addEventListener('input', (e) => {
+        state.h0 = parseFloat(e.target.value);
+        numHeight.value = state.h0;
+        resetSimulation();
+        recalculatePhysicsModel();
+      });
+
+      numHeight.addEventListener('change', (e) => {
+        let val = parseFloat(e.target.value) || 50;
+        val = Math.max(5, Math.min(300, val));
+        state.h0 = val;
+        sliderHeight.value = val;
+        numHeight.value = val;
+        resetSimulation();
+        recalculatePhysicsModel();
+      });
+
+      // Slider y número de Velocidad Inicial (v0)
+      const sliderVelocity = document.getElementById('sliderVelocity');
+      const numVelocity = document.getElementById('numVelocity');
+      const v0DirectionLabel = document.getElementById('v0DirectionLabel');
+
+      function updateV0Labels(val) {
+        if (val === 0) {
+          v0DirectionLabel.textContent = '(Soltada en reposo)';
+          v0DirectionLabel.className = 'text-[10px] text-slate-400 ml-1';
+        } else if (val < 0) {
+          v0DirectionLabel.textContent = '(Lanzada hacia abajo)';
+          v0DirectionLabel.className = 'text-[10px] text-rose-400 ml-1 font-semibold';
+        } else {
+          v0DirectionLabel.textContent = '(Lanzada hacia arriba)';
+          v0DirectionLabel.className = 'text-[10px] text-emerald-400 ml-1 font-semibold';
+        }
+      }
+
+      sliderVelocity.addEventListener('input', (e) => {
+        state.v0 = parseFloat(e.target.value);
+        numVelocity.value = state.v0;
+        updateV0Labels(state.v0);
+        resetSimulation();
+        recalculatePhysicsModel();
+      });
+
+      numVelocity.addEventListener('change', (e) => {
+        let val = parseFloat(e.target.value) || 0;
+        val = Math.max(-30, Math.min(30, val));
+        state.v0 = val;
+        sliderVelocity.value = val;
+        numVelocity.value = val;
+        updateV0Labels(state.v0);
+        resetSimulation();
+        recalculatePhysicsModel();
+      });
+
+      // Checkboxes de visibilidad
+      document.getElementById('chkShowVectors').addEventListener('change', (e) => {
+        state.showVectors = e.target.checked;
+        renderSimulation();
+      });
+
+      document.getElementById('chkShowValues').addEventListener('change', (e) => {
+        state.showValues = e.target.checked;
+        renderSimulation();
+      });
+
+      document.getElementById('chkShowTrail').addEventListener('change', (e) => {
+        state.showTrail = e.target.checked;
+        if (!state.showTrail) state.trailPoints = [];
+        renderSimulation();
+      });
+
+      document.getElementById('chkShowAllPlots').addEventListener('change', (e) => {
+        state.showPlots = e.target.checked;
+        document.getElementById('plotsContainer').style.display = state.showPlots ? 'grid' : 'none';
+        if (state.showPlots) renderAllPlots();
+      });
+
+      // Botones de hipótesis "¿Qué pasaría si...?"
+      document.querySelectorAll('.btnHypothesis').forEach(btn => {
+        btn.addEventListener('click', () => {
+          runHypothesisExperiment(btn.dataset.experiment);
+        });
+      });
+
+      // Redimensionamiento de ventana
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+        renderAllPlots();
+      });
+    }
+
+    /* ==========================================================
+       ARRANQUE E INICIALIZACIÓN
+       ========================================================== */
+    function init() {
+      buildPlanetSelectors();
+      setupEventListeners();
+      recalculatePhysicsModel();
+      resizeCanvas();
+      requestAnimationFrame(animationLoop);
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
